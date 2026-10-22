@@ -1,0 +1,16 @@
+{
+  "modelPath": "~/.config/typeless/models/ggml-small.bin",
+  "whisperCliPath": "/opt/homebrew/bin/whisper-cli",
+  "ffmpegPath": "/opt/homebrew/bin/ffmpeg",
+  "audioDevice": ":default",
+  "language": "auto",
+  "threads": 6,
+  "standardHotkey": "rightOption",
+  "cleanupHotkey": "rightCommand",
+  "dictationFolder": "~/Dictation",
+  "pasteDelayMs": 400,
+  "minRecordingDurationSeconds": 0.35,
+  "llmProvider": "openai",
+  "llmModel": "gpt-4o-mini",
+  "llmBaseURL": "https://api.openai.com/v1"
+}

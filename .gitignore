@@ -1,0 +1,37 @@
+# Build artifacts
+/.build/
+/Typeless
+/Typeless.app
+DerivedData/
+*.o
+*.d
+*.dia
+
+# Dependencies & Models
+models/
+*.bin
+*.wav
+*.tmp
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+config.json
+*.log
+typeless.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Xcode & IDEs
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+.vscode/
+.idea/
