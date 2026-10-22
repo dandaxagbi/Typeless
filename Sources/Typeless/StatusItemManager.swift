@@ -1,4 +1,5 @@
 import Cocoa
+import ServiceManagement
 
 public enum AppStatus {
     case idle
@@ -170,6 +171,11 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
             logItem.target = self
             self.menu.addItem(logItem)
 
+            let launchAtLoginItem = NSMenuItem(title: "Launch at Login (Iniciar al arrancar)", action: #selector(self.toggleLaunchAtLogin), keyEquivalent: "")
+            launchAtLoginItem.target = self
+            launchAtLoginItem.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
+            self.menu.addItem(launchAtLoginItem)
+
             let permissionsItem = NSMenuItem(title: "Check System Permissions...", action: #selector(self.checkPermissions), keyEquivalent: "p")
             permissionsItem.target = self
             self.menu.addItem(permissionsItem)
@@ -237,6 +243,26 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
         rebuildMenu()
         let trusted = KeyMonitor.isAccessibilityTrusted(prompt: false)
         updateStatus(trusted ? .idle : .needsAccessibility)
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+                LogManager.shared.log("Launch at Login disabled.")
+            } else {
+                try SMAppService.mainApp.register()
+                LogManager.shared.log("Launch at Login enabled.")
+            }
+        } catch {
+            LogManager.shared.log("Failed to toggle Launch at Login: \(error.localizedDescription)")
+            let alert = NSAlert()
+            alert.messageText = "Launch at Login"
+            alert.informativeText = "Unable to toggle automatically: \(error.localizedDescription)\n\nYou can also add Typeless in System Settings > General > Login Items."
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
+        rebuildMenu()
     }
 
     @objc private func quitApp() {
