@@ -44,40 +44,40 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
 
             switch status {
             case .idle:
-                button.image = NSImage(systemSymbolName: "mic", accessibilityDescription: "Typeless Idle")
+                button.image = NSImage(systemSymbolName: "mic", accessibilityDescription: "Typeless")
                 button.image?.isTemplate = true
                 button.title = ""
-                button.toolTip = "Typeless: Ready (Hold Right Option to speak)"
+                button.toolTip = "Typeless: Listo (Mantén pulsada Option Derecha)"
 
             case .recording(let isCleaned):
-                button.image = NSImage(systemSymbolName: "record.circle.fill", accessibilityDescription: "Recording")
+                button.image = NSImage(systemSymbolName: "record.circle.fill", accessibilityDescription: "Grabando")
                 button.image?.isTemplate = false
-                button.title = isCleaned ? " 🔴 REC (Clean)" : " 🔴 REC"
-                button.toolTip = "Typeless: Recording mic... (Release to paste)"
+                button.title = isCleaned ? " 🔴 REC (Limpio)" : " 🔴 REC"
+                button.toolTip = "Typeless: Grabando micrófono..."
 
             case .transcribing:
-                button.image = NSImage(systemSymbolName: "waveform.badge.magnifyingglass", accessibilityDescription: "Transcribing")
+                button.image = NSImage(systemSymbolName: "waveform.badge.magnifyingglass", accessibilityDescription: "Transcribiendo")
                 button.image?.isTemplate = true
-                button.title = " ⏳ Transcribing..."
-                button.toolTip = "Typeless: Transcribing locally via whisper.cpp..."
+                button.title = " ⏳"
+                button.toolTip = "Typeless: Transcribiendo audio..."
 
             case .cleaning:
-                button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Polishing")
+                button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Pulir")
                 button.image?.isTemplate = true
-                button.title = " ✨ Polishing..."
-                button.toolTip = "Typeless: Cleaning punctuation and filler words via LLM..."
+                button.title = " ✨"
+                button.toolTip = "Typeless: Limpiando con IA..."
 
             case .needsAccessibility:
-                button.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "Needs Permission")
+                button.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "Permisos requeridos")
                 button.image?.isTemplate = false
-                button.title = " ⚠️ Needs Permission"
-                button.toolTip = "Typeless: Accessibility permission required (Click menu to enable)"
+                button.title = " ⚠️"
+                button.toolTip = "Typeless: Requiere permisos de Accesibilidad"
 
             case .error(let msg):
                 button.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: "Error")
                 button.image?.isTemplate = false
                 button.title = " ⚠️"
-                button.toolTip = "Typeless Error: \(msg)"
+                button.toolTip = "Typeless: \(msg)"
             }
         }
     }
@@ -90,12 +90,12 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
             let config = ConfigManager.shared.config
             let trusted = KeyMonitor.isAccessibilityTrusted(prompt: false)
 
-            // Permission Warning Banner if not trusted
+            // 1. Aviso de permisos (solo si faltan)
             if !trusted {
-                let warnItem = NSMenuItem(title: "⚠️ Accessibility Permission Required", action: #selector(self.checkPermissions), keyEquivalent: "")
+                let warnItem = NSMenuItem(title: "⚠️ Dar permisos de Accesibilidad...", action: #selector(self.checkPermissions), keyEquivalent: "")
                 warnItem.target = self
                 let attrTitle = NSAttributedString(
-                    string: "⚠️ Accessibility Not Granted (Click to Enable)",
+                    string: "⚠️ Activar permisos de Accesibilidad",
                     attributes: [
                         .font: NSFont.boldSystemFont(ofSize: 12),
                         .foregroundColor: NSColor.systemRed
@@ -106,88 +106,82 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
                 self.menu.addItem(NSMenuItem.separator())
             }
 
-            // 1. App Title & Status
-            let titleItem = NSMenuItem(title: "Typeless — Offline Dictation", action: nil, keyEquivalent: "")
-            let titleFont = NSFont.boldSystemFont(ofSize: 13)
-            titleItem.attributedTitle = NSAttributedString(string: "Typeless — Offline Dictation", attributes: [.font: titleFont])
-            self.menu.addItem(titleItem)
-
-            let hotkeyInfo = "Standard: Hold [\(config.standardHotkey)]  •  Cleaned: Hold [\(config.cleanupHotkey)]"
-            let subInfoItem = NSMenuItem(title: hotkeyInfo, action: nil, keyEquivalent: "")
-            subInfoItem.isEnabled = false
-            self.menu.addItem(subInfoItem)
-
-            // Model info
-            let modelName = URL(fileURLWithPath: config.resolvedModelPath).lastPathComponent
-            let modelExists = FileManager.default.fileExists(atPath: config.resolvedModelPath)
-            let modelStatus = modelExists ? "Model: \(modelName) ✓" : "Model: \(modelName) (Missing!)"
-            let modelItem = NSMenuItem(title: modelStatus, action: nil, keyEquivalent: "")
-            modelItem.isEnabled = false
-            self.menu.addItem(modelItem)
-
-            // LLM API Key info
-            let apiKeySet = ConfigManager.shared.getAPIKey() != nil
-            let llmStatus = apiKeySet ? "LLM Cleanup: Configured (\(config.llmModel)) ✓" : "LLM Cleanup: Plain Paste (No API key in .env)"
-            let llmItem = NSMenuItem(title: llmStatus, action: nil, keyEquivalent: "")
-            llmItem.isEnabled = false
-            self.menu.addItem(llmItem)
-
-            self.menu.addItem(NSMenuItem.separator())
-
-            // 2. Recent Transcripts Section
-            let recentHeader = NSMenuItem(title: "Recent Transcripts (Click to Copy):", action: nil, keyEquivalent: "")
-            recentHeader.isEnabled = false
-            self.menu.addItem(recentHeader)
-
+            // 2. Historial de transcripciones recientes
             let records = HistoryLogger.shared.recentRecords
             if records.isEmpty {
-                let emptyItem = NSMenuItem(title: "  (No transcripts yet)", action: nil, keyEquivalent: "")
+                let emptyItem = NSMenuItem(title: "Sin dictados recientes", action: nil, keyEquivalent: "")
                 emptyItem.isEnabled = false
                 self.menu.addItem(emptyItem)
             } else {
                 for record in records {
-                    let cleanTag = record.isCleaned ? " [Clean]" : ""
-                    let itemTitle = "  [\(record.formattedTime)]\(cleanTag) \"\(record.summary)\""
+                    let cleanTag = record.isCleaned ? " ✨" : ""
+                    let itemTitle = "[\(record.formattedTime)]\(cleanTag) \"\(record.summary)\""
                     let item = NSMenuItem(title: itemTitle, action: #selector(self.copyTranscriptItemClicked(_:)), keyEquivalent: "")
                     item.target = self
                     item.representedObject = record
-                    item.toolTip = record.text
+                    item.toolTip = "Clic para copiar al portapapeles:\n\n\(record.text)"
                     self.menu.addItem(item)
                 }
             }
 
             self.menu.addItem(NSMenuItem.separator())
 
-            // 3. Quick Actions
-            let dictationFolderItem = NSMenuItem(title: "Open Dictation Folder (~/Dictation)", action: #selector(self.openDictationFolder), keyEquivalent: "d")
+            // 3. Acciones esenciales
+            let dictationFolderItem = NSMenuItem(title: "Abrir carpeta de dictados", action: #selector(self.openDictationFolder), keyEquivalent: "d")
             dictationFolderItem.target = self
             self.menu.addItem(dictationFolderItem)
 
-            let configFolderItem = NSMenuItem(title: "Open Config Folder (~/.config/typeless)", action: #selector(self.openConfigFolder), keyEquivalent: "c")
-            configFolderItem.target = self
-            self.menu.addItem(configFolderItem)
-
-            let logItem = NSMenuItem(title: "View Application Log (typeless.log)", action: #selector(self.openLogFile), keyEquivalent: "l")
-            logItem.target = self
-            self.menu.addItem(logItem)
-
-            let launchAtLoginItem = NSMenuItem(title: "Launch at Login (Iniciar al arrancar)", action: #selector(self.toggleLaunchAtLogin), keyEquivalent: "")
+            let launchAtLoginItem = NSMenuItem(title: "Iniciar al encender el Mac", action: #selector(self.toggleLaunchAtLogin), keyEquivalent: "")
             launchAtLoginItem.target = self
             launchAtLoginItem.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
             self.menu.addItem(launchAtLoginItem)
 
-            let permissionsItem = NSMenuItem(title: "Check System Permissions...", action: #selector(self.checkPermissions), keyEquivalent: "p")
-            permissionsItem.target = self
-            self.menu.addItem(permissionsItem)
+            // 4. Submenú Avanzado (recoge todo lo técnico en un submenú limpio)
+            let advancedMenu = NSMenu(title: "Avanzado")
 
-            let reloadItem = NSMenuItem(title: "Reload Config & .env", action: #selector(self.reloadConfig), keyEquivalent: "r")
+            let modelName = URL(fileURLWithPath: config.resolvedModelPath).lastPathComponent
+            let modelExists = FileManager.default.fileExists(atPath: config.resolvedModelPath)
+            let modelItem = NSMenuItem(title: "Modelo: \(modelName)\(modelExists ? " ✓" : " (Falta)")", action: nil, keyEquivalent: "")
+            modelItem.isEnabled = false
+            advancedMenu.addItem(modelItem)
+
+            let apiKeySet = ConfigManager.shared.getAPIKey() != nil
+            let llmStatus = apiKeySet ? "Limpieza IA: \(config.llmModel) ✓" : "Limpieza IA: Desactivada"
+            let llmItem = NSMenuItem(title: llmStatus, action: nil, keyEquivalent: "")
+            llmItem.isEnabled = false
+            advancedMenu.addItem(llmItem)
+
+            let hotkeyInfo = "Atajos: ⌥ [\(config.standardHotkey)]  •  ⌘ [\(config.cleanupHotkey)]"
+            let hotkeyItem = NSMenuItem(title: hotkeyInfo, action: nil, keyEquivalent: "")
+            hotkeyItem.isEnabled = false
+            advancedMenu.addItem(hotkeyItem)
+
+            advancedMenu.addItem(NSMenuItem.separator())
+
+            let configFolderItem = NSMenuItem(title: "Abrir carpeta de configuración", action: #selector(self.openConfigFolder), keyEquivalent: "c")
+            configFolderItem.target = self
+            advancedMenu.addItem(configFolderItem)
+
+            let logItem = NSMenuItem(title: "Ver registro de actividad (Log)", action: #selector(self.openLogFile), keyEquivalent: "l")
+            logItem.target = self
+            advancedMenu.addItem(logItem)
+
+            let permissionsItem = NSMenuItem(title: "Comprobar permisos del sistema", action: #selector(self.checkPermissions), keyEquivalent: "p")
+            permissionsItem.target = self
+            advancedMenu.addItem(permissionsItem)
+
+            let reloadItem = NSMenuItem(title: "Recargar configuración", action: #selector(self.reloadConfig), keyEquivalent: "r")
             reloadItem.target = self
-            self.menu.addItem(reloadItem)
+            advancedMenu.addItem(reloadItem)
+
+            let advancedItem = NSMenuItem(title: "Avanzado", action: nil, keyEquivalent: "")
+            advancedItem.submenu = advancedMenu
+            self.menu.addItem(advancedItem)
 
             self.menu.addItem(NSMenuItem.separator())
 
-            // 4. Quit
-            let quitItem = NSMenuItem(title: "Quit Typeless", action: #selector(self.quitApp), keyEquivalent: "q")
+            // 5. Salir
+            let quitItem = NSMenuItem(title: "Salir de Typeless", action: #selector(self.quitApp), keyEquivalent: "q")
             quitItem.target = self
             self.menu.addItem(quitItem)
         }
@@ -196,11 +190,6 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
     @objc private func copyTranscriptItemClicked(_ sender: NSMenuItem) {
         if let record = sender.representedObject as? TranscriptRecord {
             HistoryLogger.shared.copyRecordToClipboard(record)
-            let alert = NSAlert()
-            alert.messageText = "Transcript Copied"
-            alert.informativeText = "Copied to clipboard:\n\n\"\(record.text)\""
-            alert.alertStyle = .informational
-            alert.runModal()
         }
     }
 
@@ -227,8 +216,8 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
         let hasAccessibility = KeyMonitor.isAccessibilityTrusted(prompt: true)
         if hasAccessibility {
             let alert = NSAlert()
-            alert.messageText = "System Permissions Status"
-            alert.informativeText = "✓ Accessibility: Granted\n✓ Push-to-talk hotkeys are active.\n\nMicrophone access will be prompted automatically by macOS on your first recording."
+            alert.messageText = "Permisos de Typeless"
+            alert.informativeText = "✓ Permisos de Accesibilidad concedidos.\n✓ Grabación y pegado activo.\n✓ Micrófono listo."
             alert.alertStyle = .informational
             alert.runModal()
             self.updateStatus(.idle)
@@ -256,11 +245,6 @@ public final class StatusItemManager: NSObject, NSMenuDelegate {
             }
         } catch {
             LogManager.shared.log("Failed to toggle Launch at Login: \(error.localizedDescription)")
-            let alert = NSAlert()
-            alert.messageText = "Launch at Login"
-            alert.informativeText = "Unable to toggle automatically: \(error.localizedDescription)\n\nYou can also add Typeless in System Settings > General > Login Items."
-            alert.alertStyle = .warning
-            alert.runModal()
         }
         rebuildMenu()
     }
