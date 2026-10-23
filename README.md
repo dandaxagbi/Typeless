@@ -47,17 +47,17 @@ which ffmpeg whisper-cli
 
 ### 1. Download the Whisper Model
 
-Typeless defaults to OpenAI's `small.en` GGML model (~465 MB), offering a sweet spot of speed and accuracy on Apple Silicon and Intel Macs:
+Typeless defaults to OpenAI's multilingual `small` GGML model (~465 MB), offering automatic language detection (Spanish, English, and more) with exceptional speed and accuracy:
 
 ```bash
-./scripts/download_model.sh small.en
+./scripts/download_model.sh small
 ```
 
-This saves `ggml-small.en.bin` to `~/.config/typeless/models/`.
+This saves `ggml-small.bin` to `~/.config/typeless/models/`.
 
-> **Note**: You can also download `tiny.en` (~75 MB) or `base.en` (~142 MB) if you prefer even faster execution:
+> **Note**: For English-only workflows, you can also download `small.en`:
 > ```bash
-> ./scripts/download_model.sh base.en
+> ./scripts/download_model.sh small.en
 > ```
 
 ### 2. Build and Launch
@@ -112,16 +112,16 @@ Typeless creates a configuration folder at `~/.config/typeless/` upon first laun
 
 ```json
 {
-  "modelPath": "~/.config/typeless/models/ggml-small.en.bin",
+  "modelPath": "~/.config/typeless/models/ggml-small.bin",
   "whisperCliPath": "/opt/homebrew/bin/whisper-cli",
   "ffmpegPath": "/opt/homebrew/bin/ffmpeg",
   "audioDevice": ":default",
-  "language": "en",
-  "threads": 4,
+  "language": "auto",
+  "threads": 6,
   "standardHotkey": "rightOption",
   "cleanupHotkey": "rightCommand",
   "dictationFolder": "~/Dictation",
-  "pasteDelayMs": 80,
+  "pasteDelayMs": 400,
   "minRecordingDurationSeconds": 0.35,
   "llmProvider": "openai",
   "llmModel": "gpt-4o-mini",
